@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createProviders, decodeReference, modelChoices } from '../modules/mimo-modelscope/lib/providers.mjs'
+import { createProviders, decodeReference, modelChoices } from '../lib/providers.mjs'
 
 const wav = Buffer.alloc(44)
 wav.write('RIFF', 0)
