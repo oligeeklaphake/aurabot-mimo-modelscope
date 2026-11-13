@@ -72,7 +72,7 @@ test('官方 Aurabot 加载、面板保护、QQ 命令与本地接口接管', { 
       httpUrl: gateway.httpUrl, wsUrl: gateway.wsUrl, httpToken: gateway.token, wsToken: gateway.token,
     },
     ext: { [id]: {
-      voiceEnabled: true, mimoKey: 'test-mimo', imageEnabled: true, modelScopeToken: 'test-scope',
+      mimoKey: 'test-mimo', modelScopeToken: 'test-scope',
       imageModels: 'A/Default\nB/Other', imageDefaultModel: 'A/Default',
     } },
   }))
@@ -81,12 +81,22 @@ test('官方 Aurabot 加载、面板保护、QQ 命令与本地接口接管', { 
   const app = (await imported('src/host.js')).apply(fake.ctx)
   await app.ready
   assert.equal(app.modules.running(id), 'user', JSON.stringify(app.modules.status().find((m) => m.id === id)))
+  const moduleStatus = app.modules.status().find((m) => m.id === id)
+  assert.equal(moduleStatus.tab, 'modules')
+  if (process.env.MIMO_MODELSCOPE_EXPECT_NAV_GROUP) assert.equal(moduleStatus.navGroup, 'market')
   const modulePath = '/ext/' + id
   const call = async (path, body) => (await fake.call(modulePath + path, body, {}, '127.0.0.1')).json()
+  const initial = await call('/status')
+  assert.equal(initial.currentReference.name, '懒羊羊.wav')
+  assert.equal(initial.local.tts.enabled, true)
+  assert.equal(initial.local.image.enabled, true)
+  assert.equal(initial.local.tts.active, true)
+  assert.equal(initial.local.image.active, true)
   const remote = await fake.call(modulePath + '/status', undefined, {}, '203.0.113.7')
   assert.equal(remote.status, 403)
   assert.equal((await call('/preview-voice')).ok, false)
-  assert.equal((await call('/reference', { base64: wav.toString('base64') })).ok, true)
+  assert.equal((await call('/reference', { base64: wav.toString('base64'), name: '测试音色.wav' })).ok, true)
+  assert.equal((await call('/status')).currentReference.name, '测试音色.wav')
   assert.deepEqual(await call('/preview-voice', { text: '晚安' }), { ok: true, url: 'data:audio/wav;base64,' + wav.toString('base64') })
   assert.deepEqual(await call('/preview-image', { prompt: '橘猫', model: 'B/Other' }), { ok: true, url: 'data:image/png;base64,' + png.toString('base64') })
   const state = (await fake.call('/state')).json()
