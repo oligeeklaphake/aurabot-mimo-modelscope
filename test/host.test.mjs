@@ -101,8 +101,14 @@ test('官方 Aurabot 加载、面板保护、QQ 命令与本地接口接管', { 
   assert.deepEqual(await call('/preview-image', { prompt: '橘猫', model: 'B/Other' }), { ok: true, url: 'data:image/png;base64,' + png.toString('base64') })
   const state = (await fake.call('/state')).json()
   const publicSettings = state.config.ext[id]
-  assert.notEqual(publicSettings.mimoKey, 'test-mimo')
-  assert.notEqual(publicSettings.modelScopeToken, 'test-scope')
+  assert.equal(publicSettings.mimoKey, '')
+  assert.equal(publicSettings.modelScopeToken, '')
+  assert.equal(publicSettings.mimoKeySet, true)
+  assert.equal(publicSettings.modelScopeTokenSet, true)
+  const saved = (await fake.call('/save', { ext: { [id]: { mimoKey: '', modelScopeToken: '' } } }, {}, '127.0.0.1')).json()
+  assert.equal(saved.ok, true)
+  assert.equal(app.getConfig().ext[id].mimoKey, 'test-mimo')
+  assert.equal(app.getConfig().ext[id].modelScopeToken, 'test-scope')
   assert.ok(app.modules.commands().some((command) => command.module === id && command.name === '画图'))
   const ownerChat = { kind: 'private', chatId: 'private:10001', userId: '10001' }
   const guestChat = { kind: 'private', chatId: 'private:90009', userId: '90009' }
